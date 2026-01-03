@@ -10,12 +10,19 @@ import { notFoundHandler } from './middlewares/notFoundHandler';
 
 // Import routes
 import employeeRoutes from './routes/employee.routes';
+<<<<<<< HEAD
 import authRoutes from './routes/auth.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import payrollRoutes from './routes/payroll.routes';
 import notificationRoutes from './routes/notification.routes';
 import reportRoutes from './routes/report.routes';
 // import leaveRoutes from './routes/leave.routes';
+=======
+import leaveRoutes from './routes/leave.routes';
+// import authRoutes from './routes/auth.routes';
+// import attendanceRoutes from './routes/attendance.routes';
+// import payrollRoutes from './routes/payroll.routes';
+>>>>>>> 86eecdd2b0c3ac7e98faa610e8036e99fb991ef2
 
 class App {
   public app: Application;
@@ -93,11 +100,18 @@ class App {
     // API routes
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/employees', employeeRoutes);
+<<<<<<< HEAD
     this.app.use('/api/attendance', attendanceRoutes);
     this.app.use('/api/payroll', payrollRoutes);
     this.app.use('/api/notifications', notificationRoutes);
     this.app.use('/api/reports', reportRoutes);
     // this.app.use('/api/leaves', leaveRoutes);
+=======
+    this.app.use('/api/leave-requests', leaveRoutes);
+    // this.app.use('/api/auth', authRoutes);
+    // this.app.use('/api/attendance', attendanceRoutes);
+    // this.app.use('/api/payroll', payrollRoutes);
+>>>>>>> 86eecdd2b0c3ac7e98faa610e8036e99fb991ef2
   }
 
   private initializeErrorHandling(): void {
