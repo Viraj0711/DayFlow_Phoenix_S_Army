@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DayFlow — Employee Portal</title>
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>DayFlow — Employee Portal</h1>
+    <nav aria-label="Main Navigation">
+      <button id="nav-dashboard" class="nav-btn">Dashboard</button>
+      <button id="nav-profile" class="nav-btn">Profile</button>
+      <button id="nav-attendance" class="nav-btn">Attendance</button>
+      <button id="nav-leave" class="nav-btn">Leave</button>
+      <button id="btn-logout" class="nav-btn hidden">Logout</button>
+    </nav>
+  </header>
+
+  <main id="app" class="container">
+    <!-- Auth screens -->
+    <section id="auth" class="card center">
+      <div class="auth-grid">
+        <form id="sign-in-form" aria-labelledby="signin-heading">
+          <h2 id="signin-heading">Sign In</h2>
+          <label>Email<input type="email" id="signin-email" required></label>
+          <label>Password<input type="password" id="signin-password" required></label>
+          <div class="row">
+            <button type="submit" class="primary">Sign In</button>
+            <button type="button" id="show-signup">Create account</button>
+          </div>
+          <div id="signin-error" class="error" role="alert" aria-live="polite"></div>
+        </form>
+
+        <form id="sign-up-form" class="hidden" aria-labelledby="signup-heading">
+          <h2 id="signup-heading">Sign Up</h2>
+          <label>Employee ID<input id="su-empid" required></label>
+          <label>Email<input type="email" id="su-email" required></label>
+          <label>Password<input type="password" id="su-password" required minlength="6"></label>
+          <label>Role
+            <select id="su-role">
+              <option>Employee</option>
+              <option>Manager</option>
+            </select>
+          </label>
+          <div class="row">
+            <button type="submit" class="primary">Create</button>
+            <button type="button" id="show-signin">Back to sign in</button>
+          </div>
+          <div id="signup-error" class="error" role="alert" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="hidden">
+      <h2>Dashboard</h2>
+      <div class="cards">
+        <button class="card action" data-target="profile">Profile</button>
+        <button class="card action" data-target="attendance">Attendance</button>
+        <button class="card action" data-target="leave">Leave Requests</button>
+        <button class="card action" id="quick-logout">Logout</button>
+      </div>
+    </section>
+
+    <!-- Profile -->
+    <section id="profile" class="hidden card">
+      <h2>My Profile</h2>
+      <div id="profile-view">
+        <div class="profile-left">
+          <img id="profile-pic" src="" alt="Profile picture" />
+          <input id="profile-pic-input" type="file" accept="image/*" class="hidden">
+          <button id="edit-pic">Change Photo</button>
+        </div>
+        <div class="profile-right">
+          <h3>Personal</h3>
+          <div class="profile-field"><strong>Name:</strong> <span id="p-name">—</span></div>
+          <div class="profile-field"><strong>Employee ID:</strong> <span id="p-empid">—</span></div>
+          <div class="profile-field"><strong>Email:</strong> <span id="p-email">—</span></div>
+          <div class="profile-field"><strong>Phone:</strong> <span id="p-phone">—</span></div>
+          <div class="profile-field"><strong>Address:</strong> <span id="p-address">—</span></div>
+
+          <h3>Job</h3>
+          <div class="profile-field"><strong>Role:</strong> <span id="p-role">—</span></div>
+          <div class="profile-field"><strong>Department:</strong> <span id="p-dept">—</span></div>
+
+          <h3>Salary</h3>
+          <div class="profile-field"><strong>CTC:</strong> <span id="p-salary">—</span></div>
+
+          <div class="row">
+            <button id="edit-profile" class="primary">Edit</button>
+            <button id="save-profile" class="hidden">Save</button>
+          </div>
+          <div id="profile-msg" class="note" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Attendance -->
+    <section id="attendance" class="hidden card">
+      <h2>Attendance</h2>
+      <div class="attendance-controls">
+        <div>
+          <div>Today: <span id="today-date"></span></div>
+          <div>Check-in: <span id="checkin-time">—</span></div>
+          <div>Check-out: <span id="checkout-time">—</span></div>
+        </div>
+        <div class="col">
+          <button id="btn-checkin" class="primary">Check In</button>
+          <button id="btn-checkout">Check Out</button>
+        </div>
+      </div>
+      <h3>Weekly Summary</h3>
+      <ul id="weekly-list" class="list"></ul>
+    </section>
+
+    <!-- Leave -->
+    <section id="leave" class="hidden card">
+      <h2>Leave Requests</h2>
+      <form id="leave-form">
+        <label>Type
+          <select id="leave-type">
+            <option>Paid Leave</option>
+            <option>Sick Leave</option>
+            <option>Casual Leave</option>
+          </select>
+        </label>
+        <label>Start Date<input type="date" id="leave-start" required></label>
+        <label>End Date<input type="date" id="leave-end" required></label>
+        <label>Remarks<textarea id="leave-remarks"></textarea></label>
+        <div class="row"><button class="primary" type="submit">Apply</button></div>
+      </form>
+
+      <h3>My Requests</h3>
+      <ul id="leave-list" class="list"></ul>
+    </section>
+
+  </main>
+
+  <footer class="foot">© DayFlow</footer>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

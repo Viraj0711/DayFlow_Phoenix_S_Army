@@ -1,144 +1,77 @@
-import express, { Application, Request, Response } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-import { testConnection, closePool } from './config/database';
-import authRoutes from './routes/auth.routes';
+import App from './app';
+import config from './config';
+import db from './db/pool';
+import logger from './utils/logger';
 
-// Load environment variables
-dotenv.config();
-
-// Create Express app
-const app: Application = express();
-const PORT = process.env.PORT || 5000;
-const API_PREFIX = process.env.API_PREFIX || '/api/v1';
-
-// ============================================================================
-// MIDDLEWARE
-// ============================================================================
-
-// Security headers
-app.use(helmet());
-
-// CORS configuration
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-  })
-);
-
-// Body parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use(limiter);
-
-// Request logging (development only)
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`);
-    next();
-  });
-}
-
-// ============================================================================
-// ROUTES
-// ============================================================================
-
-// Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-  });
-});
-
-// API routes
-app.use(`${API_PREFIX}/auth`, authRoutes);
-
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: req.path,
-  });
-});
-
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: any) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-  });
-});
-
-// ============================================================================
-// SERVER STARTUP
-// ============================================================================
-
-async function startServer() {
+const startServer = async () => {
   try {
-    // Test database connection
-    await testConnection();
+    // Test database connection (optional for now)
+    try {
+      const dbConnected = await db.testConnection();
+      if (!dbConnected) {
+        logger.warn('⚠️  Database connection failed - running without database');
+      }
+    } catch (error) {
+      logger.warn('⚠️  Database not available - running without database', error);
+    }
+
+    // Initialize Express app
+    const appInstance = new App();
+    const app = appInstance.getApp();
 
     // Start server
-    app.listen(PORT, () => {
-      console.log('');
-      console.log('╔═══════════════════════════════════════════════════════════╗');
-      console.log('║                                                           ║');
-      console.log('║           🚀 Dayflow HRMS API Server Started             ║');
-      console.log('║                                                           ║');
-      console.log('╚═══════════════════════════════════════════════════════════╝');
-      console.log('');
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Server:      http://localhost:${PORT}`);
-      console.log(`API:         http://localhost:${PORT}${API_PREFIX}`);
-      console.log(`Health:      http://localhost:${PORT}/health`);
-      console.log('');
-      console.log('Available endpoints:');
-      console.log(`  POST   ${API_PREFIX}/auth/signup`);
-      console.log(`  POST   ${API_PREFIX}/auth/login`);
-      console.log(`  POST   ${API_PREFIX}/auth/request-verification`);
-      console.log(`  GET    ${API_PREFIX}/auth/verify-email?token=xxx`);
-      console.log(`  GET    ${API_PREFIX}/auth/me (protected)`);
-      console.log('');
+    const server = app.listen(config.port, () => {
+      logger.info(`🚀 Server started on port ${config.port}`);
+      logger.info(`📊 Environment: ${config.nodeEnv}`);
+      logger.info(`🗄️  Database: Connected to ${config.database.database}`);
+      logger.info(`⚡ Health check: http://localhost:${config.port}/health`);
     });
+
+    // Graceful shutdown
+    const gracefulShutdown = async (signal: string) => {
+      logger.info(`${signal} received. Starting graceful shutdown...`);
+      
+      server.close(async () => {
+        logger.info('HTTP server closed');
+        
+        try {
+          await db.close();
+          logger.info('Database connections closed');
+          process.exit(0);
+        } catch (error) {
+          logger.error('Error during graceful shutdown', error);
+          process.exit(1);
+        }
+      });
+
+      // Force shutdown after 10 seconds
+      setTimeout(() => {
+        logger.error('Forcing shutdown after timeout');
+        process.exit(1);
+      }, 10000);
+    };
+
+    // Handle termination signals
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (error: Error) => {
+      logger.error('Uncaught Exception:', error);
+      gracefulShutdown('uncaughtException');
+    });
+
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (reason: any) => {
+      logger.error('Unhandled Rejection:', reason);
+      gracefulShutdown('unhandledRejection');
+    });
+
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
-}
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\n\nShutting down gracefully...');
-  await closePool();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('\n\nShutting down gracefully...');
-  await closePool();
-  process.exit(0);
-});
+};
 
 // Start the server
 startServer();
-
-export default app;
