@@ -6,7 +6,7 @@ import {
   verifyEmail,
   getCurrentUser,
 } from '../controllers/auth.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authenticate } from '../middlewares/auth';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get('/verify-email', verifyEmail);
  */
 
 // GET /auth/me - Get current user profile
-router.get('/me', authMiddleware, getCurrentUser);
+router.get('/me', authenticate, getCurrentUser);
 
 /**
  * Example: Admin-only route
