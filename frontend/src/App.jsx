@@ -12,6 +12,7 @@ import Payroll from './pages/Payroll';
 import Reports from './pages/Reports';
 import Employees from './pages/Employees';
 import LeaveApprovals from './pages/LeaveApprovals';
+import Landing from './pages/Landing';
 import './styles/globals.css';
 import './App.css';
 
@@ -149,11 +150,11 @@ function App() {
             }
           />
 
-          {/* Default Route */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          
+          {/* Home / Landing Route */}
+          <Route path="/" element={<Landing />} />
+
           {/* 404 Route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
