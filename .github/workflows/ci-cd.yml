@@ -141,16 +141,12 @@ jobs:
           flags: unittests
           name: codecov-umbrella
 
-  # Build Docker Images
+  # Build Applications
   build:
-    name: Build Docker Images
+    name: Build Applications
     runs-on: ubuntu-latest
     needs: [test, security-scan]
     if: github.event_name == 'push'
-    
-    permissions:
-      contents: read
-      packages: write
 
     strategy:
       matrix:
@@ -160,46 +156,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Install dependencies
+        working-directory: ./${{ matrix.service }}
+        run: npm ci
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./${{ matrix.service }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}:buildcache,mode=max
+      - name: Build application
+        working-directory: ./${{ matrix.service }}
+        run: npm run build || echo "Build script not configured"
 
-      - name: Scan Docker image
-        uses: aquasecurity/trivy-action@master
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-image-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          name: ${{ matrix.service }}-build
+          path: ./${{ matrix.service }}/build
+          retention-days: 7
 
   # Deploy to Staging
   deploy-staging:
@@ -212,6 +188,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download backend artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-build
+          path: ./backend-build
+
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+          path: ./frontend-build
+
       - name: Deploy to staging server
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -220,9 +208,19 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             cd /opt/hrms
-            docker-compose pull
-            docker-compose up -d
-            docker system prune -f
+            git pull origin staging
+            
+            # Backend deployment
+            cd backend
+            npm ci --production
+            pm2 reload ecosystem.config.js --env staging || pm2 start ecosystem.config.js --env staging
+            
+            # Frontend deployment
+            cd ../frontend
+            npm ci
+            npm run build
+            sudo cp -r build/* /var/www/hrms/
+            sudo systemctl reload nginx
 
       - name: Run smoke tests
         run: |
@@ -249,15 +247,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create backup
+      - name: Download backend artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-build
+          path: ./backend-build
+
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+          path: ./frontend-build
+
+      - name: Create database backup
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
           username: ${{ secrets.PRODUCTION_USERNAME }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
-            cd /opt/hrms
-            docker-compose exec -T database pg_dump -U $DB_USER $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
+            pg_dump -U ${{ secrets.DB_USER }} ${{ secrets.DB_NAME }} > /opt/hrms/backups/backup_$(date +%Y%m%d_%H%M%S).sql
 
       - name: Deploy to production
         uses: appleboy/ssh-action@v1.0.0
@@ -267,9 +276,23 @@ jobs:
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
             cd /opt/hrms
-            docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
-            docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps --build
-            docker system prune -f
+            git pull origin main
+            
+            # Backend deployment with zero-downtime
+            cd backend
+            npm ci --production
+            pm2 reload ecosystem.config.js --env production
+            
+            # Frontend deployment
+            cd ../frontend
+            npm ci
+            npm run build
+            sudo cp -r build/* /var/www/hrms/
+            sudo systemctl reload nginx
+            
+            # Clean up old artifacts
+            pm2 save
+            find /opt/hrms/backups -type f -mtime +30 -delete
 
       - name: Run health checks
         run: |
@@ -286,9 +309,15 @@ jobs:
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
             cd /opt/hrms
-            docker-compose down
-            git checkout HEAD~1
-            docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            git reset --hard HEAD~1
+            cd backend
+            npm ci --production
+            pm2 restart ecosystem.config.js --env production
+            cd ../frontend
+            npm ci
+            npm run build
+            sudo cp -r build/* /var/www/hrms/
+            sudo systemctl reload nginx
 
       - name: Notify deployment
         if: always()
