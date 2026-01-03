@@ -5,6 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/layouts/AdminLayout';
 
 // Pages
+import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Unauthorized from '@/pages/Unauthorized';
 import AdminDashboard from '@/pages/admin/Dashboard';
@@ -22,6 +23,7 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -44,11 +46,8 @@ function App() {
             <Route path="reports" element={<Reports />} />
           </Route>
 
-          {/* Redirect root to admin */}
-          <Route path="/" element={<Navigate to="/admin" replace />} />
-
-          {/* 404 - Redirect to admin */}
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+          {/* 404 - Redirect to landing */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
