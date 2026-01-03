@@ -3,16 +3,14 @@ import { verifyToken } from '../utils/jwt.utils';
 import { UserRole } from '../types/auth.types';
 
 // Extend Express Request to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        employeeId: string;
-        email: string;
-        role: UserRole;
-      };
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: {
+      userId: string;
+      employeeId: string;
+      email: string;
+      role: UserRole;
+    };
   }
 }
 
@@ -99,7 +97,7 @@ export function requireRole(allowedRoles: UserRole[]) {
  */
 export function optionalAuth(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
   try {
