@@ -10,9 +10,9 @@ import { notFoundHandler } from './middlewares/notFoundHandler';
 
 // Import routes
 import employeeRoutes from './routes/employee.routes';
+import leaveRoutes from './routes/leave.routes';
 // import authRoutes from './routes/auth.routes';
 // import attendanceRoutes from './routes/attendance.routes';
-// import leaveRoutes from './routes/leave.routes';
 // import payrollRoutes from './routes/payroll.routes';
 
 class App {
@@ -90,9 +90,9 @@ class App {
 
     // API routes
     this.app.use('/api/employees', employeeRoutes);
+    this.app.use('/api/leave-requests', leaveRoutes);
     // this.app.use('/api/auth', authRoutes);
     // this.app.use('/api/attendance', attendanceRoutes);
-    // this.app.use('/api/leaves', leaveRoutes);
     // this.app.use('/api/payroll', payrollRoutes);
   }
 
