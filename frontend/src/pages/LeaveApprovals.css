@@ -1,0 +1,118 @@
+.leave-approvals-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.leave-approvals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.leave-approvals-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.leave-approvals-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.table-text-bold {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.table-text-secondary {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.125rem;
+}
+
+.leave-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.leave-detail-section {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.leave-detail-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.leave-detail-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 1rem 0;
+}
+
+.leave-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.leave-detail-row:last-child {
+  border-bottom: none;
+}
+
+.leave-detail-label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.leave-detail-value {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.leave-reason {
+  padding: 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .table-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .leave-detail-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+}

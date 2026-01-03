@@ -1,0 +1,136 @@
+.payroll-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.payroll-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.payroll-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.payroll-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.table-text-bold {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.table-text-success {
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.payslip {
+  background: white;
+}
+
+.payslip-header {
+  text-align: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary);
+  margin-bottom: 2rem;
+}
+
+.payslip-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.payslip-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.payslip-section {
+  margin-bottom: 2rem;
+}
+
+.payslip-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.payslip-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  color: var(--color-text);
+}
+
+.payslip-row:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.payslip-subtotal {
+  font-weight: 600;
+  background: var(--color-background);
+  padding: 1rem;
+  margin-top: 0.5rem;
+  border-radius: var(--radius-md);
+}
+
+.payslip-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.payslip-footer {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.payslip-footer p {
+  margin: 0.5rem 0;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .table-actions {
+    flex-direction: column;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+}

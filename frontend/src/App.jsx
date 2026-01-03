@@ -5,6 +5,13 @@ import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Profile from './pages/Profile';
+import Attendance from './pages/Attendance';
+import Leave from './pages/Leave';
+import Payroll from './pages/Payroll';
+import Reports from './pages/Reports';
+import Employees from './pages/Employees';
+import LeaveApprovals from './pages/LeaveApprovals';
 import './styles/globals.css';
 import './App.css';
 
@@ -82,12 +89,12 @@ function App() {
             }
           />
 
-          {/* Placeholder routes for other pages - to be implemented */}
+          {/* Employee Routes */}
           <Route
             path="/profile"
             element={
               <ProtectedRoute>
-                <div>Profile Page - Coming Soon</div>
+                <Profile />
               </ProtectedRoute>
             }
           />
@@ -95,7 +102,7 @@ function App() {
             path="/attendance"
             element={
               <ProtectedRoute>
-                <div>Attendance Page - Coming Soon</div>
+                <Attendance />
               </ProtectedRoute>
             }
           />
@@ -103,7 +110,7 @@ function App() {
             path="/leave"
             element={
               <ProtectedRoute>
-                <div>Leave Page - Coming Soon</div>
+                <Leave />
               </ProtectedRoute>
             }
           />
@@ -111,7 +118,7 @@ function App() {
             path="/payroll"
             element={
               <ProtectedRoute>
-                <div>Payroll Page - Coming Soon</div>
+                <Payroll />
               </ProtectedRoute>
             }
           />
@@ -119,15 +126,17 @@ function App() {
             path="/reports"
             element={
               <ProtectedRoute>
-                <div>Reports Page - Coming Soon</div>
+                <Reports />
               </ProtectedRoute>
             }
           />
+          
+          {/* Admin Only Routes */}
           <Route
             path="/employees"
             element={
               <ProtectedRoute adminOnly>
-                <div>Employee Management - Coming Soon</div>
+                <Employees />
               </ProtectedRoute>
             }
           />
@@ -135,7 +144,7 @@ function App() {
             path="/leave-approvals"
             element={
               <ProtectedRoute adminOnly>
-                <div>Leave Approvals - Coming Soon</div>
+                <LeaveApprovals />
               </ProtectedRoute>
             }
           />
