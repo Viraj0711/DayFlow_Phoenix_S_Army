@@ -1,0 +1,68 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Backup Database
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        environment: [staging, production]
+        include:
+          - environment: staging
+            host_secret: STAGING_HOST
+            username_secret: STAGING_USERNAME
+            key_secret: STAGING_SSH_KEY
+          - environment: production
+            host_secret: PRODUCTION_HOST
+            username_secret: PRODUCTION_USERNAME
+            key_secret: PRODUCTION_SSH_KEY
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create database backup
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets[matrix.host_secret] }}
+          username: ${{ secrets[matrix.username_secret] }}
+          key: ${{ secrets[matrix.key_secret] }}
+          script: |
+            cd /opt/hrms
+            BACKUP_FILE="backup_${{ matrix.environment }}_$(date +%Y%m%d_%H%M%S).sql"
+            docker-compose exec -T database pg_dump -U $DB_USER $DB_NAME | gzip > /opt/backups/$BACKUP_FILE.gz
+            
+            # Keep only last 30 days of backups
+            find /opt/backups -name "backup_${{ matrix.environment }}_*.sql.gz" -mtime +30 -delete
+
+      - name: Upload to S3
+        if: env.BACKUP_BUCKET != ''
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+        with:
+          host: ${{ secrets[matrix.host_secret] }}
+          username: ${{ secrets[matrix.username_secret] }}
+          key: ${{ secrets[matrix.key_secret] }}
+          script: |
+            if [ -n "$BACKUP_BUCKET" ]; then
+              aws s3 cp /opt/backups/backup_${{ matrix.environment }}_$(date +%Y%m%d)*.sql.gz \
+                s3://${BACKUP_BUCKET}/hrms/${{ matrix.environment }}/ \
+                --storage-class STANDARD_IA
+            fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+              -H 'Content-Type: application/json' \
+              -d '{"text":"<!channel> Database backup failed for ${{ matrix.environment }}"}'
+          fi

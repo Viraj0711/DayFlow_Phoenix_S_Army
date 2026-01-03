@@ -1,0 +1,173 @@
+groups:
+  - name: hrms_alerts
+    interval: 30s
+    rules:
+      # Application Health Alerts
+      - alert: ApplicationDown
+        expr: up{job=~"backend|frontend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # Database Alerts
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "Database has been unreachable for more than 1 minute"
+
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of database connections"
+          description: "Database connections: {{ $value }}"
+
+      - alert: DatabaseSlowQueries
+        expr: pg_stat_activity_max_tx_duration > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Query duration exceeds 60 seconds"
+
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Available disk space is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space"
+          description: "Available disk space is {{ $value }}% on {{ $labels.instance }}"
+
+      # Container Alerts
+      - alert: ContainerDown
+        expr: absent(container_last_seen{name=~"hrms-.*"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} is down"
+          description: "Container has been down for more than 2 minutes"
+
+      - alert: ContainerHighMemory
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory usage high"
+          description: "Container {{ $labels.name }} memory usage: {{ $value }}%"
+
+      - alert: ContainerHighCPU
+        expr: (rate(container_cpu_usage_seconds_total[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container CPU usage high"
+          description: "Container {{ $labels.name }} CPU usage: {{ $value }}%"
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been unreachable for more than 2 minutes"
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage: {{ $value }}%"
+
+      # Response Time Alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile response time is {{ $value }}s"
+
+      # SSL Certificate Alerts
+      - alert: SSLCertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+
+      - alert: SSLCertificateExpired
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SSL certificate expired"
+          description: "SSL certificate for {{ $labels.instance }} has expired"
+
+      # Backup Alerts
+      - alert: BackupFailed
+        expr: time() - last_backup_timestamp > 86400
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database backup failed"
+          description: "No successful backup in the last 24 hours"

@@ -1,0 +1,61 @@
+name: Performance Testing
+
+on:
+  schedule:
+    # Run weekly on Sunday at midnight
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          k6 run --out json=performance-results.json tests/performance/load-test.js || true
+
+      - name: Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            https://staging.dayflow.com
+            https://staging.dayflow.com/login
+            https://staging.dayflow.com/dashboard
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-reports
+          path: |
+            performance-results.json
+            .lighthouseci/
+
+      - name: Notify on degradation
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+              -H 'Content-Type: application/json' \
+              -d '{"text":"Performance degradation detected"}'
+          fi
