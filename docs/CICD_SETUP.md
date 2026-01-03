@@ -37,10 +37,11 @@ Navigate to: **Your Repository → Settings → Secrets and variables → Action
 | `JWT_SECRET_PRODUCTION` | Production JWT secret | 64-char hex string |
 | `SESSION_SECRET_PRODUCTION` | Production session secret | 64-char random string |
 | `SENDGRID_API_KEY` | SendGrid API key for emails | `SG.xxx` |
-| `AWS_ACCESS_KEY_ID` | AWS access key (if using S3) | `AKIAIOSFODNN7EXAMPLE` |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 storage | `AKIAIOSFODNN7EXAMPLE` |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
 | `SENTRY_DSN` | Sentry error tracking DSN | `https://xxx@sentry.io/xxx` |
 | `SLACK_WEBHOOK` | Slack webhook for notifications | `https://hooks.slack.com/services/xxx` |
+| `NODE_ENV` | Environment mode | `production` |
 
 #### Generating Secrets
 
@@ -177,7 +178,7 @@ git push origin main
 ┌─────▼─────┐         ┌──────▼──────┐
 │   Lint    │         │  Security   │
 │  Backend  │         │    Scan     │
-│  Frontend │         │   (Trivy)   │
+│  Frontend │         │  (npm audit)│
 └─────┬─────┘         └──────┬──────┘
       │                      │
       └──────────┬───────────┘
@@ -190,8 +191,8 @@ git push origin main
                  │
            ┌─────▼─────┐
            │   Build   │
-           │  Docker   │
-           │  Images   │
+           │  npm run  │
+           │   build   │
            └─────┬─────┘
                  │
         ┌────────┴────────┐
@@ -214,8 +215,8 @@ git push origin main
 #### Weekly
 - **Security Audit** (Monday 9 AM UTC)
   - npm audit
-  - Trivy scan
   - OWASP dependency check
+  - Snyk vulnerability scan
   - Report to Slack
 
 - **Performance Testing** (Sunday midnight)
@@ -267,14 +268,15 @@ ssh -i ~/.ssh/hrms_deploy user@server
 # Add to GitHub Secrets (include entire key with headers)
 ```
 
-#### 2. Docker Build Failed
+#### 2. Build Failed
 
-**Error**: `Cannot pull image`
+**Error**: `npm run build failed`
 
 **Solution**:
-- Check Docker Hub rate limits
-- Login to GHCR: `docker login ghcr.io`
-- Verify Dockerfile syntax
+- Check Node.js version matches requirement (18.x or 20.x)
+- Clear npm cache: `npm cache clean --force`
+- Delete node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check for syntax errors in code
 
 #### 3. Database Migration Failed
 
@@ -283,13 +285,16 @@ ssh -i ~/.ssh/hrms_deploy user@server
 **Solution**:
 ```bash
 # Check database is running
-docker ps | grep database
+sudo systemctl status postgresql
+# or for MySQL
+sudo systemctl status mysql
 
 # Check environment variables
-echo $DB_HOST $DB_PORT
+echo $DB_HOST $DB_PORT $DB_NAME
 
 # Test connection
-docker-compose exec backend npm run db:test
+cd /opt/hrms/backend
+npm run db:test
 ```
 
 #### 4. Deployment Timeout
@@ -303,8 +308,9 @@ docker-compose exec backend npm run db:test
     deploy:
       timeout-minutes: 90
   ```
-- Optimize Docker build with caching
-- Check server resources
+- Optimize npm install with `--prefer-offline`
+- Use npm ci for faster installs
+- Check server resources (CPU, RAM, disk space)
 
 ### Viewing Logs
 
@@ -312,12 +318,15 @@ docker-compose exec backend npm run db:test
 # SSH to server
 ssh -i ~/.ssh/hrms_deploy user@server
 
-# View application logs
-cd /opt/hrms
-docker-compose logs -f --tail=100
+# View application logs with PM2
+pm2 logs hrms-backend --lines 100
+pm2 logs hrms-frontend --lines 100
+
+# View all PM2 processes
+pm2 status
 
 # View system logs
-sudo journalctl -u docker -f
+sudo journalctl -u nginx -f
 ```
 
 ## Best Practices
@@ -353,9 +362,10 @@ chore: update dependencies
 ### 4. Environment Parity
 
 Keep staging and production as similar as possible:
-- Same OS version
-- Same Docker version
-- Same dependencies
+- Same OS version (Ubuntu 22.04 LTS recommended)
+- Same Node.js version (18.x or 20.x LTS)
+- Same npm version
+- Same dependencies (lock package-lock.json)
 - Similar data (anonymized)
 
 ### 5. Security
@@ -419,7 +429,8 @@ Store build outputs:
 ## Resources
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Docker Documentation](https://docs.docker.com/)
+- [PM2 Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)
+- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
 - [SSH Best Practices](https://www.ssh.com/academy/ssh/keygen)
 - [Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
 

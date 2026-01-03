@@ -17,9 +17,11 @@
 
 ### Prerequisites
 
-- Docker & Docker Compose
+- Node.js 18+ (LTS recommended)
+- npm or yarn
+- PM2 (Process Manager)
 - Git
-- Node.js 18+ (for local development)
+- PostgreSQL 14+
 - AWS CLI (for cloud deployment)
 - Terraform (for infrastructure as code)
 
@@ -31,18 +33,38 @@
    cd DayFlow_Phoenix_S_Army
    ```
 
-2. **Configure environment:**
+2. **Install dependencies:**
+   ```bash
+   # Install PM2 globally
+   npm install -g pm2
+   
+   # Install backend dependencies
+   cd backend
+   npm install
+   
+   # Install frontend dependencies
+   cd ../frontend
+   npm install
+   cd ..
+   ```
+
+3. **Configure environment:**
    ```bash
    cp .env.example .env
    # Edit .env with your local configuration
    ```
 
-3. **Start services:**
+4. **Start services:**
    ```bash
-   docker-compose up -d
+   # Start backend and frontend with PM2
+   pm2 start ecosystem.config.js
+   
+   # Or start individually
+   pm2 start backend/server.js --name hrms-backend
+   pm2 start frontend/server.js --name hrms-frontend
    ```
 
-4. **Access the application:**
+5. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000
    - Database: localhost:5432
@@ -56,12 +78,11 @@
 ```
 DayFlow_Phoenix_S_Army/
 ├── backend/                 # Backend application
-│   ├── Dockerfile
-│   └── .dockerignore
+│   ├── server.js
+│   └── package.json
 ├── frontend/               # Frontend application
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── .dockerignore
+│   ├── package.json
+│   └── nginx.conf
 ├── infrastructure/         # Infrastructure as Code
 │   └── terraform/
 ├── scripts/               # Deployment & utility scripts
@@ -79,35 +100,46 @@ DayFlow_Phoenix_S_Army/
 ├── docs/                  # Documentation
 ├── .github/
 │   └── workflows/        # CI/CD pipelines
-├── docker-compose.yml     # Development compose
-├── docker-compose.prod.yml
-├── docker-compose.monitoring.yml
+├── ecosystem.config.js    # PM2 configuration
 ├── .env.example
 └── README.md
 ```
 
-### Docker Commands
+### PM2 Commands
 
 ```bash
 # Start all services
-docker-compose up -d
+pm2 start ecosystem.config.js
 
 # View logs
-docker-compose logs -f
+pm2 logs
+pm2 logs hrms-backend
+pm2 logs hrms-frontend
 
 # Stop services
-docker-compose down
+pm2 stop all
+pm2 stop hrms-backend
 
-# Rebuild containers
-docker-compose up -d --build
+# Restart services
+pm2 restart all
+pm2 restart hrms-backend --update-env
 
-# Execute commands in containers
-docker-compose exec backend npm test
-docker-compose exec database psql -U hrms_user hrms_db
+# View process status
+pm2 list
+pm2 status
+
+# Run tests
+cd backend && npm test
+
+# Connect to database
+psql -U hrms_user -d hrms_db
+
+# Monitor processes
+pm2 monit
 
 # Clean up
-docker-compose down -v  # Removes volumes too
-docker system prune -a  # Remove all unused containers/images
+pm2 delete all
+pm2 flush  # Clear all logs
 ```
 
 ### Environment Variables
@@ -146,10 +178,10 @@ See [.env.example](.env.example) for all available configuration options.
    - Integration tests with PostgreSQL
    - Coverage reports to Codecov
 
-4. **Build** - Docker image creation
-   - Multi-stage Docker builds
-   - Images pushed to GitHub Container Registry
-   - Vulnerability scanning of images
+4. **Build** - Application build
+   - Frontend production build
+   - Backend dependency installation
+   - Build artifacts prepared for deployment
 
 5. **Deploy Staging** - Auto-deploy to staging
    - Triggered on `develop`/`staging` branches
@@ -265,7 +297,7 @@ aws configure
 
 **This creates:**
 - VPC with public/private subnets
-- EC2 instance with Docker
+- EC2 instance with Node.js and PM2
 - RDS PostgreSQL database
 - S3 bucket for file uploads
 - Security groups and IAM roles
@@ -311,17 +343,17 @@ git push heroku main
 
 #### Development
 ```bash
-docker-compose up -d
+NODE_ENV=development pm2 start ecosystem.config.js
 ```
 
 #### Staging
 ```bash
-docker-compose -f docker-compose.yml up -d
+NODE_ENV=staging pm2 start ecosystem.config.js
 ```
 
 #### Production
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+NODE_ENV=production pm2 start ecosystem.config.js
 ```
 
 ---
@@ -330,8 +362,18 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ### Start Monitoring Stack
 
+**Note:** The monitoring stack (Prometheus, Grafana, Loki, AlertManager) requires separate installation and configuration. These services need to be installed and run as system services or using their respective installation methods.
+
 ```bash
-docker-compose -f docker-compose.monitoring.yml up -d
+# Example: Start Prometheus (if installed as a service)
+sudo systemctl start prometheus
+sudo systemctl start grafana-server
+
+# Or run Prometheus directly
+prometheus --config.file=/etc/prometheus/prometheus.yml
+
+# Or run Grafana directly
+grafana-server --config=/etc/grafana/grafana.ini
 ```
 
 ### Access Dashboards
@@ -354,7 +396,7 @@ docker-compose -f docker-compose.monitoring.yml up -d
 2. **System Resources**
    - CPU, memory, disk usage
    - Network traffic
-   - Container metrics
+   - Process metrics
 
 3. **Database Performance**
    - Query performance
@@ -385,7 +427,7 @@ Logs are collected by Promtail and stored in Loki.
 2. Use LogQL queries:
    ```
    {job="hrms-backend"} |= "error"
-   {container="hrms-frontend"} | json
+   {app="hrms-frontend"} | json
    ```
 
 ### Application Monitoring
@@ -434,7 +476,7 @@ app.get('/metrics', async (req, res) => {
 - XSS protection
 - CSRF protection
 - Security headers
-- Docker security (non-root users)
+- Process isolation
 - Secrets management
 - Firewall configuration
 - Fail2ban for intrusion prevention
@@ -442,23 +484,22 @@ app.get('/metrics', async (req, res) => {
 
 ### Security Scanning
 
-**Automated scans run weekly:**
-```bash
-# Manual security scan
-cd monitoring
-docker-compose exec prometheus /bin/prometheus
-```
-
-**Container vulnerability scanning:**
-```bash
-trivy image dayflow-hrms-backend:latest
-trivy image dayflow-hrms-frontend:latest
-```
+**Automated scans run weekly via GitHub Actions**
 
 **Dependency scanning:**
 ```bash
 cd backend && npm audit
 cd frontend && npm audit
+
+# Fix vulnerabilities
+npm audit fix
+```
+
+**File system scanning:**
+```bash
+# Install trivy if needed
+trivy fs ./backend
+trivy fs ./frontend
 ```
 
 ### Secrets Management
@@ -512,32 +553,40 @@ sudo ./scripts/server-hardening.sh
 
 ### Common Issues
 
-#### 1. Container won't start
+#### 1. Process won't start
 
 ```bash
 # Check logs
-docker-compose logs backend
+pm2 logs hrms-backend --lines 100
+
+# Check process status
+pm2 list
 
 # Common fixes
-docker-compose down
-docker-compose up -d --build
+pm2 restart hrms-backend
 
-# Remove volumes and restart
-docker-compose down -v
-docker-compose up -d
+# Delete and restart process
+pm2 delete hrms-backend
+pm2 start ecosystem.config.js
+
+# Check for errors
+pm2 describe hrms-backend
 ```
 
 #### 2. Database connection issues
 
 ```bash
 # Check database is running
-docker-compose ps
+sudo systemctl status postgresql
+# Or for non-systemd systems
+pg_isready -h localhost -p 5432
 
 # Test connection
-docker-compose exec database psql -U hrms_user -d hrms_db
+psql -U hrms_user -d hrms_db -h localhost
 
 # Check environment variables
-docker-compose exec backend env | grep DB_
+pm2 env hrms-backend
+cat .env | grep DB_
 ```
 
 #### 3. Port already in use
@@ -559,11 +608,17 @@ PORT=5001
 # Check disk usage
 df -h
 
-# Clean Docker
-docker system prune -a --volumes
+# Clean PM2 logs
+pm2 flush
 
-# Remove old logs
+# Remove old application logs
 sudo find /var/log -name "*.log" -mtime +30 -delete
+
+# Clean npm cache
+npm cache clean --force
+
+# Remove node_modules if needed (then reinstall)
+find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
 ```
 
 #### 5. SSL certificate issues
@@ -586,33 +641,39 @@ curl http://localhost:5000/health
 curl http://localhost:3000/health
 
 # Database health
-docker-compose exec database pg_isready
+pg_isready -h localhost -p 5432
 
-# All services
-docker-compose ps
+# All PM2 processes
+pm2 list
+pm2 status
 ```
 
 ### Log Locations
 
+- **PM2 logs**: `~/.pm2/logs/`
 - **Application logs**: `/var/log/hrms/`
 - **Nginx logs**: `/var/log/nginx/`
-- **Docker logs**: `/var/lib/docker/containers/`
 - **System logs**: `/var/log/syslog`
 
 ### Debugging Commands
 
 ```bash
-# Interactive shell in container
-docker-compose exec backend /bin/bash
-
 # View real-time logs
-docker-compose logs -f --tail=100 backend
+pm2 logs hrms-backend --lines 100
+pm2 logs --raw hrms-backend
 
-# Inspect container
-docker inspect hrms-backend
+# Inspect process
+pm2 describe hrms-backend
+pm2 show hrms-backend
 
 # Check resource usage
-docker stats
+pm2 monit
+
+# View process information
+pm2 info hrms-backend
+
+# Enable detailed logs
+pm2 restart hrms-backend --log-date-format="YYYY-MM-DD HH:mm:ss"
 ```
 
 ---
@@ -654,10 +715,14 @@ Backups run daily at 2 AM UTC via GitHub Actions.
 **Manual backup:**
 ```bash
 # Database
-docker-compose exec database pg_dump -U hrms_user hrms_db > backup_$(date +%Y%m%d).sql
+pg_dump -U hrms_user -h localhost hrms_db > backup_$(date +%Y%m%d).sql
 
 # Application data
 tar -czf app_backup_$(date +%Y%m%d).tar.gz /opt/hrms
+
+# PM2 process configuration
+pm2 save
+cp ~/.pm2/dump.pm2 pm2_backup_$(date +%Y%m%d).json
 
 # Upload to S3
 aws s3 cp backup_$(date +%Y%m%d).sql s3://hrms-backups/
@@ -667,17 +732,18 @@ aws s3 cp backup_$(date +%Y%m%d).sql s3://hrms-backups/
 
 ```bash
 # Stop application
-docker-compose down
+pm2 stop all
 
 # Restore database
-docker-compose up -d database
-cat backup_20260103.sql | docker-compose exec -T database psql -U hrms_user hrms_db
+psql -U hrms_user -h localhost hrms_db < backup_20260103.sql
 
 # Restore application
 tar -xzf app_backup_20260103.tar.gz -C /opt
 
-# Start application
-docker-compose up -d
+# Restore PM2 processes (if saved)
+pm2 resurrect
+# Or restart from config
+pm2 start ecosystem.config.js
 ```
 
 ### Rollback Procedure
@@ -696,39 +762,48 @@ cd /opt/hrms
 
 #### Horizontal Scaling (Multiple Instances)
 
-```yaml
-# docker-compose.prod.yml
-services:
-  backend:
-    deploy:
-      replicas: 3
-  frontend:
-    deploy:
-      replicas: 2
+```bash
+# Use PM2 cluster mode for automatic load balancing
+pm2 start backend/server.js -i 3 --name hrms-backend
+pm2 start frontend/server.js -i 2 --name hrms-frontend
+
+# Or use max CPU cores
+pm2 start backend/server.js -i max --name hrms-backend
+
+# Scale existing process
+pm2 scale hrms-backend 4
+```
+
+**In ecosystem.config.js:**
+```javascript
+module.exports = {
+  apps: [{
+    name: 'hrms-backend',
+    script: './backend/server.js',
+    instances: 3,
+    exec_mode: 'cluster',
+    max_memory_restart: '1G'
+  }]
+}
 ```
 
 #### Vertical Scaling (Resource Limits)
 
-```yaml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-        reservations:
-          cpus: '1.0'
-          memory: 1G
+```bash
+# Set memory limit for process
+pm2 start backend/server.js --max-memory-restart 2G
+
+# Monitor and auto-restart on memory threshold
+pm2 restart hrms-backend --max-memory-restart 1G
 ```
 
 ### Database Maintenance
 
 ```bash
 # Connect to database
-docker-compose exec database psql -U hrms_user hrms_db
+psql -U hrms_user -h localhost -d hrms_db
 
-# Vacuum database
+# Vacuum database (run inside psql)
 VACUUM ANALYZE;
 
 # Check database size
@@ -741,6 +816,9 @@ SELECT
 FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY pg_total_relation_size(quote_ident(table_name)) DESC;
+
+# From command line (without entering psql)
+psql -U hrms_user -h localhost -d hrms_db -c "VACUUM ANALYZE;"
 ```
 
 ### SSL Certificate Renewal
@@ -790,7 +868,8 @@ npm test
 - **On-call**: +1-XXX-XXX-XXXX
 
 ### Useful Links
-- [Docker Documentation](https://docs.docker.com/)
+- [PM2 Documentation](https://pm2.keymetrics.io/docs/)
+- [Node.js Documentation](https://nodejs.org/docs/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Nginx Documentation](https://nginx.org/en/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)
