@@ -55,8 +55,26 @@ const config: Config = {
   },
   
   jwt: {
-    accessTokenSecret: process.env.JWT_ACCESS_SECRET || 'your-access-token-secret-change-in-production',
-    refreshTokenSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-token-secret-change-in-production',
+    accessTokenSecret: (() => {
+      const secret = process.env.JWT_ACCESS_SECRET;
+      if (!secret && process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_ACCESS_SECRET is required in production');
+      }
+      if (secret && secret.length < 32 && process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_ACCESS_SECRET must be at least 32 characters');
+      }
+      return secret || 'dev-only-access-secret-min-32-chars-required';
+    })(),
+    refreshTokenSecret: (() => {
+      const secret = process.env.JWT_REFRESH_SECRET;
+      if (!secret && process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_REFRESH_SECRET is required in production');
+      }
+      if (secret && secret.length < 32 && process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_REFRESH_SECRET must be at least 32 characters');
+      }
+      return secret || 'dev-only-refresh-secret-min-32-chars-required';
+    })(),
     accessTokenExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
     refreshTokenExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
   },
