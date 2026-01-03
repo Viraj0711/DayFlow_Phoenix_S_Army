@@ -7,18 +7,12 @@ import { apiLimiter } from './middlewares/rateLimiter';
 
 // Import routes
 import employeeRoutes from './routes/employee.routes';
-<<<<<<< HEAD
 import leaveRoutes from './routes/leave.routes';
-import authRoutes from './routes/auth.routes';
-// import attendanceRoutes from './routes/attendance.routes';
-// import payrollRoutes from './routes/payroll.routes';
-=======
 import authRoutes from './routes/auth.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import payrollRoutes from './routes/payroll.routes';
 import notificationRoutes from './routes/notification.routes';
 import reportRoutes from './routes/report.routes';
->>>>>>> 57733430db93a1d19f047d1e9190bb26c6520203
 
 class App {
   public app: Application;
@@ -91,16 +85,11 @@ class App {
     // API routes
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/employees', employeeRoutes);
-<<<<<<< HEAD
     this.app.use('/api/leave-requests', leaveRoutes);
-    // this.app.use('/api/attendance', attendanceRoutes);
-    // this.app.use('/api/payroll', payrollRoutes);
-=======
     this.app.use('/api/attendance', attendanceRoutes);
     this.app.use('/api/payroll', payrollRoutes);
     this.app.use('/api/notifications', notificationRoutes);
     this.app.use('/api/reports', reportRoutes);
->>>>>>> 57733430db93a1d19f047d1e9190bb26c6520203
   }
 
   private initializeErrorHandling(): void {

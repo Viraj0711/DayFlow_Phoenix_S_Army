@@ -110,8 +110,8 @@ export async function findEmployeeById(
   const sql = `
     SELECT 
       id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
       created_at, updated_at
     FROM employees
     WHERE id = $1
@@ -128,31 +128,13 @@ export async function findEmployeeByUserId(
   const sql = `
     SELECT 
       id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
       created_at, updated_at
     FROM employees
     WHERE user_id = $1
   `;
   return queryOne<EmployeeRow>(sql, [userId]);
-}
-
-/**
- * Find employee by employee code
- */
-export async function findEmployeeByCode(
-  code: string
-): Promise<EmployeeRow | null> {
-  const sql = `
-    SELECT 
-      id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
-      created_at, updated_at
-    FROM employees
-    WHERE employee_code = $1
-  `;
-  return queryOne<EmployeeRow>(sql, [code]);
 }
 
 /**
@@ -164,9 +146,9 @@ export async function findEmployeeWithUser(
   const sql = `
     SELECT 
       e.id, e.user_id, e.employee_code, e.first_name, e.last_name, e.phone,
-      e.date_of_birth, e.gender, e.address, e.city, e.state, e.country, 
+      e.date_of_birth, e.gender, e.profile_picture, e.address, e.city, e.state, e.country, 
       e.postal_code, e.department, e.designation, e.hire_date, 
-      e.employment_status, e.manager_id, e.created_at, e.updated_at,
+      e.employment_status, e.manager_id, e.basic_salary, e.created_at, e.updated_at,
       u.email, u.role
     FROM employees e
     INNER JOIN users u ON e.user_id = u.id
@@ -182,7 +164,9 @@ export async function createEmployee(
   input: CreateEmployeeInput
 ): Promise<EmployeeRow> {
   const sql = `
-    INSERT INTO employees (profile_picture, address, city, state, country, postal_code,
+    INSERT INTO employees (
+      user_id, employee_code, first_name, last_name, phone,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
       department, designation, hire_date, employment_status, manager_id, basic_salary
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
@@ -212,11 +196,7 @@ export async function createEmployee(
     input.hire_date,
     input.employment_status,
     input.manager_id || null,
-<<<<<<< HEAD
     input.basic_salary || null,
-=======
-    input.basic_salary,
->>>>>>> 57733430db93a1d19f047d1e9190bb26c6520203
   ]);
 
   if (!result) {
@@ -307,8 +287,8 @@ export async function updateEmployee(
     WHERE id = $${paramCount}
     RETURNING 
       id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
       created_at, updated_at
   `;
 
@@ -367,8 +347,8 @@ export async function listEmployees(filters?: {
   const sql = `
     SELECT 
       id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
       created_at, updated_at
     FROM employees
     ${whereClause}
@@ -388,8 +368,8 @@ export async function getTeamMembers(managerId: string): Promise<EmployeeRow[]> 
   const sql = `
     SELECT 
       id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
       created_at, updated_at
     FROM employees
     WHERE manager_id = $1
