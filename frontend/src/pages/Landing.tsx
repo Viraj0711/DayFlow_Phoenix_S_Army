@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -15,6 +15,36 @@ import {
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['features', 'benefits', 'about'];
+      const scrollPosition = window.scrollY + 100;
+
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const offsetTop = element.offsetTop;
+          const offsetBottom = offsetTop + element.offsetHeight;
+
+          if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+            setActiveSection(section);
+            return;
+          }
+        }
+      }
+      
+      if (window.scrollY < 100) {
+        setActiveSection('');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const features = [
     {
@@ -78,9 +108,36 @@ const Landing: React.FC = () => {
               <span className="text-xl font-bold text-gray-900">Dayflow</span>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition">Features</a>
-              <a href="#benefits" className="text-gray-600 hover:text-gray-900 transition">Benefits</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 transition">About</a>
+              <a 
+                href="#features" 
+                className={`relative transition-all duration-300 ${
+                  activeSection === 'features' 
+                    ? 'text-primary-600 font-semibold nav-link-active' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Features
+              </a>
+              <a 
+                href="#benefits" 
+                className={`relative transition-all duration-300 ${
+                  activeSection === 'benefits' 
+                    ? 'text-primary-600 font-semibold nav-link-active' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Benefits
+              </a>
+              <a 
+                href="#about" 
+                className={`relative transition-all duration-300 ${
+                  activeSection === 'about' 
+                    ? 'text-primary-600 font-semibold nav-link-active' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                About
+              </a>
               <button 
                 onClick={() => navigate('/login')}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
@@ -99,8 +156,22 @@ const Landing: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-primary-50">
-        <div className="max-w-7xl mx-auto">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-primary-50 relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Gradient Orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+          
+          {/* Geometric Shapes */}
+          <div className="absolute top-20 left-10 w-20 h-20 border-4 border-primary-200 rounded-lg rotate-12 opacity-50"></div>
+          <div className="absolute top-40 right-20 w-16 h-16 bg-primary-100 rounded-full opacity-40"></div>
+          <div className="absolute bottom-20 left-1/4 w-12 h-12 border-4 border-purple-200 rounded-full opacity-50"></div>
+          <div className="absolute top-1/2 right-10 w-24 h-24 border-4 border-pink-200 rotate-45 opacity-40"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
               Every workday,{' '}
@@ -140,8 +211,17 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 right-0 w-72 h-72 bg-gradient-to-br from-primary-100 to-purple-100 rounded-full filter blur-3xl opacity-20"></div>
+          <div className="absolute bottom-10 left-0 w-72 h-72 bg-gradient-to-br from-pink-100 to-primary-100 rounded-full filter blur-3xl opacity-20"></div>
+          
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Everything you need to manage your workforce
@@ -172,8 +252,23 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
+      <section id="benefits" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 relative overflow-hidden">
+        {/* Decorative Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary-100 rounded-full filter blur-3xl opacity-20"></div>
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-100 rounded-full filter blur-3xl opacity-20"></div>
+          
+          {/* Dots Pattern */}
+          <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+            <div className="grid grid-cols-8 gap-4">
+              {[...Array(64)].map((_, i) => (
+                <div key={i} className="w-2 h-2 bg-primary-600 rounded-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
@@ -212,8 +307,18 @@ const Landing: React.FC = () => {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
+      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/2 left-0 w-64 h-64 bg-gradient-to-r from-primary-100 to-transparent rounded-full filter blur-3xl opacity-30"></div>
+          <div className="absolute top-1/2 right-0 w-64 h-64 bg-gradient-to-l from-purple-100 to-transparent rounded-full filter blur-3xl opacity-30"></div>
+          
+          {/* Geometric Decorations */}
+          <div className="absolute top-10 right-1/4 w-16 h-16 border-2 border-primary-200 rotate-45 opacity-30"></div>
+          <div className="absolute bottom-10 left-1/4 w-12 h-12 border-2 border-purple-200 rounded-full opacity-30"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">
             Built for modern organizations
           </h2>
@@ -232,8 +337,22 @@ const Landing: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 to-primary-700">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 to-primary-700 relative overflow-hidden">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10">
+            <div className="absolute top-10 left-10 w-32 h-32 border-4 border-white rounded-full animate-pulse"></div>
+            <div className="absolute top-20 right-20 w-24 h-24 border-4 border-white rotate-45 animate-spin-slow"></div>
+            <div className="absolute bottom-10 left-1/4 w-20 h-20 border-4 border-white rounded-full animate-bounce-slow"></div>
+            <div className="absolute bottom-20 right-1/3 w-28 h-28 border-4 border-white rotate-12 animate-pulse"></div>
+          </div>
+          
+          {/* Gradient Overlays */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white rounded-full filter blur-3xl opacity-10"></div>
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white rounded-full filter blur-3xl opacity-10"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to streamline your HR operations?
           </h2>
