@@ -88,21 +88,41 @@ log_info "Deploying application..."
 ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST << 'EOF'
     cd /opt/hrms
     
-    # Pull latest images
-    echo "Pulling Docker images..."
-    docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
+    # Install backend dependencies
+    echo "Installing backend dependencies..."
+    cd backend
+    npm install --production
     
-    # Stop old containers
-    echo "Stopping old containers..."
-    docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+    # Install frontend dependencies and build
+    echo "Building frontend..."
+    cd ../frontend
+    npm install --production
+    npm run build
     
-    # Start new containers
-    echo "Starting new containers..."
-    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+    # Stop existing processes
+    echo "Stopping existing services..."
+    pm2 stop hrms-backend hrms-frontend || true
     
-    # Wait for services to be healthy
+    # Run database migrations
+    echo "Running database migrations..."
+    cd ../backend
+    npm run migrate || true
+    
+    # Start services with PM2
+    echo "Starting backend service..."
+    cd ../backend
+    pm2 start npm --name "hrms-backend" -- start
+    
+    echo "Starting frontend service..."
+    cd ../frontend
+    pm2 start npm --name "hrms-frontend" -- start
+    
+    # Save PM2 configuration
+    pm2 save
+    
+    # Wait for services to start
     echo "Waiting for services to start..."
-    sleep 30
+    sleep 10
     
     # Check health
     echo "Checking application health..."
@@ -120,30 +140,22 @@ ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST << 'EOF'
         exit 1
     fi
     
-    # Run database migrations
-    echo "Running database migrations..."
-    docker-compose exec -T backend npm run migrate || true
-    
-    # Clean up old images
-    echo "Cleaning up old Docker images..."
-    docker system prune -f
-    
     echo "Deployment complete!"
 EOF
 
 # Verify deployment
 log_info "Verifying deployment..."
-if ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST "docker ps | grep -q hrms-backend"; then
-    log_info "✓ Backend container is running"
+if ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST "pm2 list | grep -q hrms-backend"; then
+    log_info "✓ Backend service is running"
 else
-    log_error "✗ Backend container not running"
+    log_error "✗ Backend service not running"
     exit 1
 fi
 
-if ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST "docker ps | grep -q hrms-frontend"; then
-    log_info "✓ Frontend container is running"
+if ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST "pm2 list | grep -q hrms-frontend"; then
+    log_info "✓ Frontend service is running"
 else
-    log_error "✗ Frontend container not running"
+    log_error "✗ Frontend service not running"
     exit 1
 fi
 
@@ -155,7 +167,8 @@ echo ""
 echo "Application URL: https://$SERVER_HOST"
 echo ""
 echo "Useful commands:"
-echo "  View logs: ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST 'cd /opt/hrms && docker-compose logs -f'"
-echo "  Restart: ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST 'cd /opt/hrms && docker-compose restart'"
+echo "  View logs: ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST 'pm2 logs hrms-backend'"
+echo "  Restart: ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST 'pm2 restart all'"
+echo "  Status: ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST 'pm2 status'"
 echo "  Rollback: ssh -i $SSH_KEY $SERVER_USER@$SERVER_HOST 'cd /opt/hrms-backups && ./rollback.sh'"
 echo ""

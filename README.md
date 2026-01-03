@@ -9,7 +9,7 @@
 DayFlow is a production-ready, web-based **Human Resource Management System (HRMS)** designed to digitize and streamline essential HR operations such as employee management, attendance tracking, leave workflows, and payroll visibility. The system focuses on simplicity for employees and control for HR administrators through secure, role-based access.
 
 **✨ Key Highlights:**
-- 🐳 **Fully Containerized** - Docker & Docker Compose ready
+- � **Production Ready** - PM2 process management and optimized deployment
 - 🔄 **CI/CD Pipeline** - Automated testing, building, and deployment
 - 📊 **Complete Monitoring** - Prometheus, Grafana, Loki integration
 - 🔒 **Security First** - Hardened servers, SSL/TLS, secrets management
@@ -118,7 +118,7 @@ The application separates concerns clearly:
 - **Backend:** Node.js (Express) / Django / Spring Boot
 - **Database:** PostgreSQL / MySQL / MongoDB
 - **Authentication:** JWT / OAuth
-- **Deployment:** Docker, Vercel, AWS, Render
+- **Deployment:** PM2, Vercel, AWS, Render
 
 *(Stack may vary based on team preference.)*
 
@@ -175,8 +175,15 @@ cd DayFlow_Phoenix_S_Army
 cp .env.example .env
 # Edit .env with your configuration
 
-# Start all services
-docker-compose up -d
+# Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+
+# Start backend
+cd backend && npm run dev
+
+# Start frontend (in a new terminal)
+cd frontend && npm run dev
 
 # Access the application
 # Frontend: http://localhost:3000
@@ -193,7 +200,7 @@ terraform init
 terraform plan
 terraform apply
 
-# Option 2: Manual Deployment
+# Option 2: Manual Deployment with PM2
 ./scripts/deploy.sh
 
 # Option 3: CI/CD (GitHub Actions)
@@ -214,16 +221,15 @@ git push origin main
 
 ### DevOps Features
 
-#### 🐳 Containerization
-- Multi-stage Docker builds for optimized images
-- Docker Compose for local development
-- Production-ready configurations
+#### � Production Deployment
+- PM2 process management for Node.js applications
+- Optimized production builds
 - Health checks and automatic restarts
 
 #### 🔄 CI/CD Pipeline
 - **Automated Testing** - Unit, integration, and E2E tests
 - **Security Scanning** - Trivy, npm audit, OWASP dependency check
-- **Automated Builds** - Docker images pushed to GHCR
+- **Automated Builds** - Production builds and deployment
 - **Deployment** - Zero-downtime rolling deployments
 - **Rollback** - Automatic rollback on failure
 
@@ -279,7 +285,7 @@ git push origin main
 - **Database:** PostgreSQL 15
 - **Cache:** Redis
 - **Reverse Proxy:** Nginx
-- **Containerization:** Docker & Docker Compose
+- **Process Manager:** PM2
 - **CI/CD:** GitHub Actions
 - **Monitoring:** Prometheus, Grafana, Loki
 - **Cloud:** AWS / GCP / Azure
@@ -292,12 +298,10 @@ git push origin main
 ```
 DayFlow_Phoenix_S_Army/
 ├── backend/                    # Backend application
-│   ├── Dockerfile
-│   └── .dockerignore
+└   └── .gitignore
 ├── frontend/                   # Frontend application
-│   ├── Dockerfile
 │   ├── nginx.conf
-│   └── .dockerignore
+│   └── .gitignore
 ├── infrastructure/             # Infrastructure as Code
 │   └── terraform/             # Terraform configurations
 ├── scripts/                    # Deployment & utility scripts
@@ -323,9 +327,6 @@ DayFlow_Phoenix_S_Army/
 │       ├── backup.yml         # Database backups
 │       ├── security-audit.yml # Security scanning
 │       └── performance.yml    # Performance testing
-├── docker-compose.yml          # Development compose
-├── docker-compose.prod.yml     # Production overrides
-├── docker-compose.monitoring.yml # Monitoring stack
 ├── .env.example               # Environment template
 ├── .env.staging               # Staging template
 ├── .env.production            # Production template
@@ -340,17 +341,16 @@ DayFlow_Phoenix_S_Army/
 ### Development
 ```bash
 # Start development environment
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
+cd backend && npm run dev
+cd frontend && npm run dev
 
 # Run tests
-docker-compose exec backend npm test
-docker-compose exec frontend npm test
+cd backend && npm test
+cd frontend && npm test
 
-# Stop services
-docker-compose down
+# Build for production
+cd backend && npm run build
+cd frontend && npm run build
 ```
 
 ### Deployment
@@ -373,8 +373,8 @@ sudo ./scripts/setup-ssl.sh
 
 ### Monitoring
 ```bash
-# Start monitoring stack
-docker-compose -f docker-compose.monitoring.yml up -d
+# Start monitoring stack (requires separate setup)
+# See monitoring/ directory for configuration
 
 # Access Grafana
 open http://localhost:3001

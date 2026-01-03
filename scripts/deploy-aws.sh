@@ -206,13 +206,14 @@ AMI_ID=$(aws ec2 describe-images \
 cat > user-data.sh <<'EOF'
 #!/bin/bash
 apt-get update
-apt-get install -y docker.io docker-compose git
+apt-get install -y nodejs npm git postgresql-client nginx
 
-systemctl start docker
-systemctl enable docker
+# Install PM2 for process management
+npm install -g pm2
 
-# Add ubuntu user to docker group
-usermod -aG docker ubuntu
+# Configure PM2 to start on boot
+pm2 startup systemd -u ubuntu --hp /home/ubuntu
+systemctl enable pm2-ubuntu
 
 # Install CloudWatch agent
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
