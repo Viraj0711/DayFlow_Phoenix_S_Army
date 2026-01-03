@@ -18,6 +18,9 @@ export async function createUser(
   `;
   
   const result = await query<User>(sql, [employeeId, email, passwordHash, role]);
+  if (!result.rows[0]) {
+    throw new Error('Failed to create user');
+  }
   return result.rows[0];
 }
 
@@ -103,6 +106,9 @@ export async function createVerificationToken(userId: string): Promise<EmailVeri
   `;
   
   const result = await query<EmailVerificationToken>(sql, [userId, token]);
+  if (!result.rows[0]) {
+    throw new Error('Failed to create verification token');
+  }
   return result.rows[0];
 }
 

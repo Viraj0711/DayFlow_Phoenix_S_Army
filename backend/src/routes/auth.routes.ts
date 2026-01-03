@@ -6,8 +6,7 @@ import {
   verifyEmail,
   getCurrentUser,
 } from '../controllers/auth.controller';
-import { authMiddleware, requireRole } from '../middleware/auth.middleware';
-import { UserRole } from '../types/auth.types';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
