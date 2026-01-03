@@ -13,6 +13,7 @@ export interface EmployeeRow {
   phone: string;
   date_of_birth: Date;
   gender: string;
+  profile_picture: string | null;
   address: string;
   city: string;
   state: string;
@@ -23,6 +24,7 @@ export interface EmployeeRow {
   hire_date: Date;
   employment_status: EmploymentStatus;
   manager_id: string | null;
+  basic_salary: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -46,6 +48,7 @@ export interface CreateEmployeeInput {
   phone: string;
   date_of_birth: Date;
   gender: string;
+  profile_picture?: string | null;
   address: string;
   city: string;
   state: string;
@@ -56,6 +59,7 @@ export interface CreateEmployeeInput {
   hire_date: Date;
   employment_status: EmploymentStatus;
   manager_id?: string | null;
+  basic_salary?: number | null;
 }
 
 /**
@@ -76,6 +80,25 @@ export interface UpdateEmployeeInput {
   designation?: string;
   employment_status?: EmploymentStatus;
   manager_id?: string | null;
+}
+
+/**
+ * Find employee by employee code
+ */
+export async function findEmployeeByCode(
+  employeeCode: string
+): Promise<EmployeeRow | null> {
+  const sql = `
+    SELECT 
+      id, user_id, employee_code, first_name, last_name, phone,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
+      created_at, updated_at
+    FROM employees
+    WHERE employee_code = $1
+  `;
+  
+  return queryOne<EmployeeRow>(sql, [employeeCode]);
 }
 
 /**
@@ -159,16 +182,14 @@ export async function createEmployee(
   input: CreateEmployeeInput
 ): Promise<EmployeeRow> {
   const sql = `
-    INSERT INTO employees (
-      user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id
+    INSERT INTO employees (profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
     RETURNING 
       id, user_id, employee_code, first_name, last_name, phone,
-      date_of_birth, gender, address, city, state, country, postal_code,
-      department, designation, hire_date, employment_status, manager_id,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
+      department, designation, hire_date, employment_status, manager_id, basic_salary,
       created_at, updated_at
   `;
   
@@ -180,6 +201,7 @@ export async function createEmployee(
     input.phone,
     input.date_of_birth,
     input.gender,
+    input.profile_picture || null,
     input.address,
     input.city,
     input.state,
@@ -188,6 +210,9 @@ export async function createEmployee(
     input.department,
     input.designation,
     input.hire_date,
+    input.employment_status,
+    input.manager_id || null,
+    input.basic_salary
     input.employment_status,
     input.manager_id || null,
   ]);

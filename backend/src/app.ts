@@ -8,9 +8,9 @@ import logger from './utils/logger';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFoundHandler } from './middlewares/notFoundHandler';
 
-// Import routes (to be created)
+// Import routes
+import employeeRoutes from './routes/employee.routes';
 // import authRoutes from './routes/auth.routes';
-// import employeeRoutes from './routes/employee.routes';
 // import attendanceRoutes from './routes/attendance.routes';
 // import leaveRoutes from './routes/leave.routes';
 // import payrollRoutes from './routes/payroll.routes';
@@ -89,8 +89,8 @@ class App {
     });
 
     // API routes
+    this.app.use('/api/employees', employeeRoutes);
     // this.app.use('/api/auth', authRoutes);
-    // this.app.use('/api/employees', employeeRoutes);
     // this.app.use('/api/attendance', attendanceRoutes);
     // this.app.use('/api/leaves', leaveRoutes);
     // this.app.use('/api/payroll', payrollRoutes);
