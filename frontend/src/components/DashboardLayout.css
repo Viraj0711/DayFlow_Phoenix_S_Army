@@ -1,0 +1,29 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.dashboard-main {
+  flex: 1;
+  margin-left: 260px;
+  margin-top: 60px;
+  min-height: calc(100vh - 60px);
+}
+
+.dashboard-content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+  }
+
+  .dashboard-content {
+    padding: 1rem;
+  }
+}
