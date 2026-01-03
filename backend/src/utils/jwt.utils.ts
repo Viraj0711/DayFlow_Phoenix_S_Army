@@ -1,7 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { JWTPayload } from '../types/auth.types';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key';
+// Validate JWT secret exists and is strong enough
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production environment');
+  }
+  console.warn('⚠️  WARNING: Using default JWT_SECRET in development. DO NOT use in production!');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-in-production';
+
+if (JWT_SECRET.length < 32 && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET must be at least 32 characters in production');
+}
+
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 /**

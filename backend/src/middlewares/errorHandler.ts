@@ -30,13 +30,20 @@ export const errorHandler = (
     });
   }
 
-  // Unexpected errors
+  // Unexpected errors - never expose details in production
   logger.error(`500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, err);
+  
+  // Generate a unique error ID for tracking
+  const errorId = `ERR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  logger.error(`Error ID: ${errorId}`, err);
   
   return res.status(500).json({
     status: 'error',
     statusCode: 500,
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    message: process.env.NODE_ENV === 'development' 
+      ? err.message 
+      : 'An internal server error occurred. Please contact support.',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(process.env.NODE_ENV !== 'development' && { errorId }),
   });
 };

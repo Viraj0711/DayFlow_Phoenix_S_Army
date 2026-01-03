@@ -171,9 +171,35 @@ export async function updateAttendanceRecord(
 }
 
 /**
- * Delete attendance record
+ * Delete attendance record with validation
+ * Only allows deletion if record is from today or not yet finalized
  */
-export async function deleteAttendanceRecord(id: string): Promise<boolean> {
+export async function deleteAttendanceRecord(
+  id: string,
+  employeeId?: string
+): Promise<boolean> {
+  // Get the record first to validate
+  const record = await findAttendanceById(id);
+  
+  if (!record) {
+    return false;
+  }
+  
+  // Validate ownership if employeeId provided
+  if (employeeId && record.employee_id !== employeeId) {
+    throw new Error('Unauthorized: Cannot delete another employee\'s attendance record');
+  }
+  
+  // Only allow deletion of records from the current day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const recordDate = new Date(record.date);
+  recordDate.setHours(0, 0, 0, 0);
+  
+  if (recordDate < today) {
+    throw new Error('Cannot delete past attendance records. Contact HR for corrections.');
+  }
+  
   const sql = `DELETE FROM attendance WHERE id = $1`;
   const rowCount = await execute(sql, [id]);
   return rowCount > 0;

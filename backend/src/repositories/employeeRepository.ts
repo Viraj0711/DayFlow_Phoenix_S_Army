@@ -182,7 +182,9 @@ export async function createEmployee(
   input: CreateEmployeeInput
 ): Promise<EmployeeRow> {
   const sql = `
-    INSERT INTO employees (profile_picture, address, city, state, country, postal_code,
+    INSERT INTO employees (
+      user_id, employee_code, first_name, last_name, phone,
+      date_of_birth, gender, profile_picture, address, city, state, country, postal_code,
       department, designation, hire_date, employment_status, manager_id, basic_salary
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
@@ -312,9 +314,44 @@ export async function updateEmployee(
 }
 
 /**
- * Delete employee by ID
+ * Soft delete employee by ID (sets status to TERMINATED)
+ * This prevents data loss and maintains referential integrity
  */
 export async function deleteEmployee(id: string): Promise<boolean> {
+  // Soft delete by updating employment status instead of hard delete
+  const sql = `
+    UPDATE employees 
+    SET employment_status = 'TERMINATED', 
+        updated_at = NOW()
+    WHERE id = $1 
+      AND employment_status != 'TERMINATED'
+    RETURNING id
+  `;
+  const result = await queryOne<{ id: string }>(sql, [id]);
+  return result !== null;
+}
+
+/**
+ * Permanently delete employee (USE WITH CAUTION)
+ * Should only be used for GDPR compliance or data cleanup
+ */
+export async function permanentlyDeleteEmployee(id: string): Promise<boolean> {
+  // First check if employee has any related records
+  const hasRelatedRecords = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM (
+      SELECT 1 FROM attendance WHERE employee_id = $1
+      UNION ALL
+      SELECT 1 FROM leave_requests WHERE employee_id = $1
+      UNION ALL
+      SELECT 1 FROM employee_leave_balances WHERE employee_id = $1
+    ) AS related`,
+    [id]
+  );
+  
+  if (hasRelatedRecords && hasRelatedRecords.count > 0) {
+    throw new Error('Cannot permanently delete employee with existing records. Use soft delete instead.');
+  }
+  
   const sql = `DELETE FROM employees WHERE id = $1`;
   const rowCount = await execute(sql, [id]);
   return rowCount > 0;

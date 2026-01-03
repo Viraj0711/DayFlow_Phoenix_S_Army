@@ -104,8 +104,22 @@ export async function createLeaveRequest(
     throw new AppError('Start date must be before or equal to end date', 400);
   }
   
-  if (startDate < new Date()) {
-    throw new AppError('Cannot apply for past dates', 400);
+  // Check if start date is in the past (comparing date only, not time)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  
+  if (start < today) {
+    throw new AppError('Cannot apply for leave starting in the past', 400);
+  }
+  
+  // Validate that leave is not too far in the future (e.g., max 1 year ahead)
+  const maxFutureDate = new Date();
+  maxFutureDate.setFullYear(maxFutureDate.getFullYear() + 1);
+  
+  if (startDate > maxFutureDate) {
+    throw new AppError('Cannot apply for leave more than 1 year in advance', 400);
   }
   
   // Calculate days
