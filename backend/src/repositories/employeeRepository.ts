@@ -212,9 +212,7 @@ export async function createEmployee(
     input.hire_date,
     input.employment_status,
     input.manager_id || null,
-    input.basic_salary
-    input.employment_status,
-    input.manager_id || null,
+    input.basic_salary,
   ]);
 
   if (!result) {
