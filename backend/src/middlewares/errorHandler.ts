@@ -13,6 +13,20 @@ export class AppError extends Error {
   }
 }
 
+export const notFoundHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  logger.error(`404 - Route ${req.originalUrl} not found - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  
+  return res.status(404).json({
+    status: 'error',
+    statusCode: 404,
+    message: `Route ${req.originalUrl} not found`,
+  });
+};
+
 export const errorHandler = (
   err: Error | AppError,
   req: Request,

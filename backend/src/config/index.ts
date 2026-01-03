@@ -5,6 +5,7 @@ dotenv.config();
 interface Config {
   port: number;
   nodeEnv: string;
+  isDevelopment: boolean;
   database: {
     host: string;
     port: number;
@@ -40,6 +41,7 @@ interface Config {
 const config: Config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
+  isDevelopment: process.env.NODE_ENV !== 'production',
   
   database: {
     host: process.env.DB_HOST || 'localhost',
