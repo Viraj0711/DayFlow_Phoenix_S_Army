@@ -170,8 +170,8 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Check if email is verified
-    if (!user.email_verified) {
+    // Check if email is verified (skip in development mode)
+    if (!user.email_verified && process.env.NODE_ENV !== 'development') {
       res.status(403).json({
         success: false,
         message: 'Email not verified. Please verify your email before logging in.',
