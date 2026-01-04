@@ -110,12 +110,6 @@ class Database {
       client.release();
     }
   }
-      logger.error('Transaction error', error);
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
 
   /**
    * Test database connection

@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   X,
+  Home,
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -80,6 +81,15 @@ const Sidebar: React.FC = () => {
 
           {/* User section */}
           <div className="border-t border-gray-200 p-4">
+            {/* Landing Page Link */}
+            <Link
+              to="/"
+              className="flex items-center gap-3 px-4 py-3 mb-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <Home size={20} />
+              Go to Home
+            </Link>
+
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
                 {user?.firstName?.charAt(0)}

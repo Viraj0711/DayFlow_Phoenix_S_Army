@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Users, 
   Calendar, 
@@ -15,6 +16,7 @@ import {
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
@@ -138,19 +140,37 @@ const Landing: React.FC = () => {
               >
                 About
               </a>
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                >
+                  Login
+                </button>
+              )}
+            </nav>
+            {isAuthenticated ? (
+              <button 
+                onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}
+                className="md:hidden px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
+              >
+                Dashboard
+              </button>
+            ) : (
               <button 
                 onClick={() => navigate('/login')}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                className="md:hidden px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
               >
                 Login
               </button>
-            </nav>
-            <button 
-              onClick={() => navigate('/login')}
-              className="md:hidden px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
-            >
-              Login
-            </button>
+            )}
           </div>
         </div>
       </header>
